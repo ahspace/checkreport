@@ -3,7 +3,7 @@ For creating the monthly channel subscrier full export
 It will read grtool configuration, logging configuration
 """
 # -*- coding: utf-8 -*-
-__author__ = "NFPV2962"
+__author__ = "ZMSH2370"
 __version__ = "0.2"
 
 import sys
@@ -368,6 +368,7 @@ def cleanup(data):
         with open('config.json', 'w') as f:
             #if runtype in ['delta', 'deltamonth']:
             data['genparams'][runtype + 'parameters']['TS_STARTD'] = TS_CURD
+            data['genparams']['DBPASSWORD'] = Encryption().encrypt(data['genparams']['DBPASSWORD']).decode('utf-8')
             f.write(json.dumps(data, indent=4))
         log.info("1;EME;SUCCESS;200;;;;;;running cleanup")
         if data['genparams']['DOUBLE_RUN_PRO_PP']=='Y':
