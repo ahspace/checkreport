@@ -1,0 +1,60 @@
+EME
+
+Monday, July 23, 2018
+4:58 PM
+
+Se intra pe serverul activ: 10.104.137.44  
+ 
+
+Se face crontab list pentru userul osadmin, pentru a verifica scritpul EME. 
+
+crontab -l -u osadmin 
+
+
+00 01 * * 1,2,3,4,5,6 cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype delta     ####For delta
+00 06 * * 7 cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype delta     ####For delta Sunday
+#00 10 * * 7 cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype delta     ####For delta
+#02 18 1 * * cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype deltamonth     ####For deltamonth
+#02 18 * * * cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype full     ####For full  keep this commented use only when you require to run full, change time as per your requirement
+
+se ruleaza scriptul de compliance care ne intereseaza, pentru daily sau monthly.
+
+ cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype delta
+
+Dupa ce se ruleaza scriptul de compliance, se verifica logurile, in locatia : 
+
+less /opt/application/compliance/logs/GR-Python.log
+
+Daca in loguri apare DBREF LAG, se discuta cu echipa SSPO DBA, pentru a ne confirma cat lag mai este pentru tara respectiva (In cazul nostru OCI sau OGN) pentru a putea informa tara daca avem lag sau nu .
+
+Pentru a ne asigura ca raportul s-a finalizat, trebuie sa avem la final de log :
+
+1;EME;SUCCESS;200;;;;;ExecTime 6582.0(s); compliance.py in delta mode
+
+Pentru a verifica daca raportul s-a terminat, trebuie sa avem 2 fisiere in calea :
+
+/data/reports_oci/Exports/COMPLIANCE ------>  
+
+ex : 
+-rw-r--r-- 1 osadmin osadmin 109500026 Jul 24 02:42 CI01_20180723.zip
+-rw-r--r-- 1 osadmin osadmin        32 Jul 24 02:42 CI01_20180723.zip.md5
+
+unde ci este tara.
+
+Dupa ce ne-am asigurat ca totul este in regula, acum trebuie sa trimitem fisierele catre  GOS, de pe log server ( opomcls01 ) 
+
+Dupa ce am intrat pe server si suntem logati ca root, dam su pe cft251. 
+
+
+[root@opomcls01 ~]# su - cft251
+-bash-3.2$ 
+
+Acum trebuie sa trimitem cele 2 fisiere folosind comanda : 
+
+
+   1.  cftutil send idf=C3PAML01,part=AML_PR,fname=/var/opt/data/reports_oci/Exports/COMPLIANCE/CI01_20180707.zip.md5,parm=CI01_20180707.zip.md5
+   2.  cftutil send idf=C3PAML01,part=AML_PR,fname=/var/opt/data/reports_oci/Exports/COMPLIANCE/CI01_20180707.zip,parm=CI01_20180707.zip
+
+ *Unde CI este tara. 
+
+ Dupa care GOS trebuie sa verifice daca fisierele au fost primite. 
