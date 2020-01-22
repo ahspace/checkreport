@@ -1,5 +1,6 @@
 {
     "genparams": {
+		"VERSION": "2.1",
         "AFFILIATENAME": "",
         "INSTITUTE": "",
         "DBHOSTNAME": "",
@@ -8,14 +9,11 @@
         "DBSID": "PRTP",
         "DBPORT": "20300",
         "DB_TYPE_TANGO": "N",
-        "SKIP_FRESHNESS_MODE": "N",
         "TEMPO": "300",
         "NBRETRY": "90",
         "EMEBASEPATH": "",
-        "KPIBASEPATH": "",
         "DOUBLE_RUN_PRO_PP": "N",
         "PP_EMEBASEPATH": "",
-        "PP_KPIBASEPATH": "",
         "fullparameters": {
             "OUT_DIR": "",
             "KPI_DIR": "",
@@ -55,14 +53,9 @@
     "sqlparams": [
         {
             "bindvars": [],
-            "stats": [
-                "Nombre d'Enregistrements "
-            ],
             "delimiter": " ",
             "outputfile": "in_country.txt",
-            "rowparam": [],
-            "sqlfile": "IN_COUNTRY-1.0.0.sql",
-            "tangocount": 0
+            "sqlfile": "IN_COUNTRY.sql"
         },
         {
             "bindvars": [
@@ -72,19 +65,8 @@
                 "TS_CURD",
                 "MSISDN"
             ],
-            "stats": [
-                "Nombre d'Enregistrements ",
-                "Clients distincts "
-            ],
-            "delimiter": " ",
             "outputfile": "in_customer.txt",
-            "rowparam": [
-                0,
-                4,
-                8
-            ],
-            "sqlfile": "IN_CUSTOMER-1.1.9.sql",
-            "tangocount": 0
+            "sqlfile": "IN_CUSTOMER.sql"
         },
         {
             "bindvars": [
@@ -94,20 +76,8 @@
                 "TS_CURD",
                 "MSISDN"
             ],
-            "stats": [
-                "Nombre d'Enregistrements ",
-                "Clients distincts "
-            ],
-            "delimiter": "|",
             "outputfile": "in_customer_extension_hist.txt",
-            "rowparam": [
-                1,
-                1,
-                8
-            ],
-            "sqlfile": "IN_CUSTOMER_EXT-1.1.5.sql",
-            "sqlfilefull": "IN_CUSTOMER_EXT-1.1.4_INIT.sql",
-            "tangocount": 0
+            "sqlfile": "IN_CUSTOMER_EXT.sql"
         },
         {
             "bindvars": [
@@ -121,15 +91,8 @@
                 "Nombre d'Enregistrements ",
                 "Comptes distincts "
             ],
-            "delimiter": " ",
             "outputfile": "in_account.txt",
-            "rowparam": [
-                0,
-                4,
-                8
-            ],
-            "sqlfile": "IN_ACCOUNT-1.1.6.sql",
-            "tangocount": 0
+            "sqlfile": "IN_ACCOUNT.sql"
         },
         {
             "bindvars": [
@@ -139,19 +102,8 @@
                 "TS_STARTD",
                 "MSISDN"
             ],
-            "stats": [
-                "Nombre d'Enregistrements ",
-                "Comptes distincts "
-            ],
-            "delimiter": "|",
             "outputfile": "in_account_extension_hist.txt",
-            "rowparam": [
-                1,
-                1,
-                8
-            ],
-            "sqlfile": "IN_ACCOUNT_EXT-1.1.4.sql",
-            "tangocount": 0
+            "sqlfile": "IN_ACCOUNT_EXT.sql"
         },
         {
             "bindvars": [

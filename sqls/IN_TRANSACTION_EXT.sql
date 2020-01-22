@@ -1,5 +1,5 @@
 /*
-** SCRIPT SQL : IN_TRANSACTION_EXT.sql
+** SCRIPT SQL : IN_TRANSACTION_EXT-1.1.1.sql
 ** DATE       : 25/05/2018
 ** MODIFIED DATE: 14/08/2019
 ** DESCRIPTION: TR_SP_11 column is filled with the local currency 
@@ -358,8 +358,12 @@ select * from
 		nvl(substr(t.sender_wallet_number,1,2),'XXXX')		             			acc_businesstype,
 		nvl(substr(t.sender_wallet_number,3,9),'XXXX')		                     	acc_accno,
 		nvl(substr(t.sender_wallet_number,12,9),'XXXX')  		                   	acc_businessno,
-		(select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
-				where PARAM_KEY = 'CURRENCY_CODE')									acc_currencyiso,
+	case
+    when (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')='GNF' then 'GBP'
+    else
+    (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')	end as								acc_currencyiso,
 		TO_CHAR(t.created_on_num,'YYYYMMDD')         									entrydate,
 		TO_CHAR(t.transfer_date_num,'YYYYMMDD')      									valuedate,
 		SUBSTR(t.transfer_id,1,2)||SUBSTR(t.transfer_id,instr(t.transfer_id,'.')+1)		businessno_trans,
@@ -435,8 +439,12 @@ SELECT
 		nvl(substr(t.receiver_wallet_number,1,2),'XXXX')		             			acc_businesstype,
 		nvl(substr(t.receiver_wallet_number,3,9),'XXXX')		                     	acc_accno,
 		nvl(substr(t.receiver_wallet_number,12,9),'XXXX')  		                   	acc_businessno,
-		(select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
-				where PARAM_KEY = 'CURRENCY_CODE')									acc_currencyiso,
+	case
+    when (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')='GNF' then 'GBP'
+    else
+    (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')	end as								acc_currencyiso,
 		TO_CHAR(t.created_on_num,'YYYYMMDD')         									entrydate,
 		TO_CHAR(t.transfer_date_num,'YYYYMMDD')      									valuedate,
 		SUBSTR(t.transfer_id,1,2)||SUBSTR(t.transfer_id,instr(t.transfer_id,'.')+1)		businessno_trans,

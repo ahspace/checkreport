@@ -1,5 +1,5 @@
   /*
-** SCRIPT SQL : IN_TRANSACTION.sql
+** SCRIPT SQL : IN_TRANSACTION-1.2.1.sql
 ** DATE       : 25/05/2018
 ** MODIFIED DATE: 10/08/2019
 ** AUTHOR: ZMSH2370
@@ -291,9 +291,12 @@ SELECT * FROM
        RPAD(nvl(substr(t.sender_wallet_number,1,2),'XXXX'),4)             			acc_businesstype,
        RPAD(nvl(substr(t.sender_wallet_number,3,9),'XXXX'),11)                     	acc_accno,
        RPAD(nvl(substr(t.sender_wallet_number,12,9),'XXXX'),11)                     acc_businessno,
-
-	     (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
-				where PARAM_KEY = 'CURRENCY_CODE') 									acc_currencyiso,
+	case
+    when (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')='GNF' then 'GBP'
+    else
+    (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')	end as							acc_currencyiso,
        TO_CHAR(t.created_on_num,'YYYYMMDD')          								entrydate,
        TO_CHAR(t.transfer_date_num,'YYYYMMDD')       								valuedate,
        RPAD(SUBSTR(t.transfer_id,1,2)||SUBSTR(t.transfer_id,instr(t.transfer_id,'.')+1),16)  businessno_trans,
@@ -351,8 +354,12 @@ SELECT
        RPAD(nvl(substr(t.receiver_wallet_number,1,2),'XXXX'),4)             			acc_businesstype,
        RPAD(nvl(substr(t.receiver_wallet_number,3,9),'XXXX'),11)                     	acc_accno,
        RPAD(nvl(substr(t.receiver_wallet_number,12,9),'XXXX'),11)                     acc_businessno,
-       (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
-				where PARAM_KEY = 'CURRENCY_CODE') 									acc_currencyiso,
+	case
+    when (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')='GNF' then 'GBP'
+    else
+    (select max(PARAM_VAL_TEXT) LOCAL_CURRENCY   from DBREF_VAR_ENV
+				where PARAM_KEY = 'CURRENCY_CODE')	end as								acc_currencyiso,
        TO_CHAR(t.created_on_num,'YYYYMMDD')          									entrydate,
        TO_CHAR(t.transfer_date_num,'YYYYMMDD')       									valuedate,
        RPAD(SUBSTR(t.transfer_id,1,2)||SUBSTR(t.transfer_id,instr(t.transfer_id,'.')+1),16)  businessno_trans,

@@ -4,6 +4,8 @@ Created to schedule compliance package on delta and fullactive modes
 Pass week of month and Day of week to run fullactive
 DryRun: pyhton3.5 scheduler.py --weekofmonth 4 --dayofweek 2
 First day of week is SATURDAY
+
+*19/09/2019 Includes updates for firstday of the month is SUNDAY
 """
 __author__ = "ZMSH2370"
 __version__ = "0.1"
@@ -48,8 +50,10 @@ def week_of_month(dt):
     try:
         first_day = dt.replace(day=1)
         dom = dt.day
-        adjusted_dom = dom + first_day.weekday()
-    
+        if first_day.weekday() == 6:
+            adjusted_dom = dom + day_of_week(dt) - 1
+        else:
+            adjusted_dom = dom + day_of_week(dt)
         return int(ceil(adjusted_dom/7.0))
     except Exception as e:
         log.exception("1;EME;FAILURE;700; FUNCTION ERROR " + str(e), exc_info=False)
@@ -88,7 +92,6 @@ def schedule(WEEK,DAY):
 
         if (CURRWEEK == WEEK and CURRDAY == DAY):
              os.system("cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype fullactive")
-           
         else:
             os.system("cd /opt/application/compliance && /usr/local/bin/python3.5 compliance.py --runtype delta")
     except Exception as e:

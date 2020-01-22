@@ -1,3 +1,8 @@
+/*
+** SCRIPT SQL : IN_ACCOUNT-1.1.7.sql
+** VERSION    : 1.1.7
+** DATE       : 11/03/2019								 
+*/
 /*list of actives users the last 91 Days before the start date */
 WITH list_actives_91_Days AS(
 
@@ -47,9 +52,8 @@ list_actives_last_90_days AS (
 		AND ti.transfer_date >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS') - 90
 		AND ti.transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
 		AND ti.transfer_status = 'TS'
-), 
-
-mv_users_data as (
+)
+, mv_users_data as (
 select
     decode(mw.user_type,'OPERATOR', mw.user_type, nvl(mp.user_type, u.user_type)) user_type
     , nvl2(mp.user_id, mp.msisdn, nvl2(u.user_id, u.msisdn, mw.msisdn)) msisdn
@@ -80,10 +84,8 @@ select
     , mw.wallet_number
     , mw.modified_on as wallet_modified_on
     , mw.created_on as wallet_created_on
-    , spms.subtype_name as wallet_type_name
-    , mcp.max_balance/100 as wallet_maximum_balance
-	, mw.payment_type_id as wallet_type_id
-	, cg.grade_name
+    ,spms.subtype_name as wallet_type_name
+    ,mcp.max_balance/100 as wallet_maximum_balance
 from mtx_wallet mw
     left join mtx_party mp on (mw.user_id = mp.user_id and mw.user_type = mp.user_type)
     left join users u on (mw.user_id = u.user_id and mw.user_type <> 'SUBSCRIBER')
@@ -95,138 +97,82 @@ where mw.user_type = 'OPERATOR' or mp.user_id is not null or u.user_id is not nu
 )
 
 SELECT 
-'"'||	institute	||		'"|'||
-'"'||	custno		||		'"|'||
-'"'||	businesstype	||		'"|'||
-'"'||	accno		||		'"|'||
-'"'||	businessno	||		'"|'||
-'"'||	acc_currencyiso ||		'"|'||
-'"'||	acc_sph_01	||		'"|'||
-'"'||	acc_sph_02	||		'"|'||
-'"'||	acc_sph_03	||		'"|'||
-'"'||	acc_sph_04	||		'"|'||
-'"'||	acc_sph_05	||		'"|'||
-'"'||	acc_sph_06	||		'"|'||
-'"'||	acc_sph_07	||		'"|'||
-'"'||	acc_sph_08	||		'"|'||
-'"'||	acc_sph_09	||		'"|'||
-'"'||	acc_sph_10	||		'"|'||
-'"'||	acc_sph_11	||		'"|'||
-'"'||	acc_sph_12	||		'"|'||
-'"'||	acc_sph_13	||		'"|'||
-'"'||	acc_sph_14	||		'"|'||
-'"'||	acc_sph_15	||		'"|'||
-'"'||	acc_sph_16	||		'"|'||
-'"'||	acc_sph_17	||		'"|'||
-'"'||	acc_sph_18	||		'"|'||
-'"'||	acc_sph_19	||		'"|'||
-'"'||	acc_sph_20	||		'"|'||
-'"'||	acc_sph_21	||		'"|'||
-'"'||	acc_sph_22	||		'"|'||
-'"'||	acc_sph_23	||		'"|'||
-'"'||	acc_sph_24	||		'"|'||
-'"'||	acc_sph_25	||		'"|'||
-'"'||	acc_sph_26	||		'"|'||
-'"'||	acc_sph_27	||		'"|'||
-'"'||	acc_sph_28	||		'"|'||
-'"'||	acc_sph_29	||		'"|'||
-'"'||	acc_sph_30	||		'"|'||
-'"'||	acc_sph_31	||		'"|'||
-'"'||	acc_sph_32	||		'"|'||
-'"'||	acc_sph_33	||		'"|'||
-'"'||	acc_sph_34	||		'"|'||
-'"'||	acc_sph_35	||		'"|'||
-'"'||	acc_sph_36	||		'"|'||
-'"'||	acc_sph_37	||		'"|'||
-'"'||	acc_sph_38	||		'"|'||
-'"'||	acc_sph_39	||		'"|'||
-'"'||	acc_sph_40	||		'"|'||
-'"'||	acc_sph_41	||		'"|'||
-'"'||	acc_sph_42	||		'"|'||
-'"'||	acc_sph_43	||		'"|'||
-'"'||	acc_sph_44	||		'"|'||
-'"'||	acc_sph_45	||		'"|'||
-'"'||	acc_sph_46	||		'"|'||
-'"'||	acc_sph_47	||		'"|'||
-'"'||	acc_sph_48	||		'"|'||
-	acc_nph_01	||		 '|'||
-	acc_nph_02	||		 '|'||
-	acc_nph_03	||		 '|'||
-	acc_nph_04	||		 '|'||
-	acc_nph_05	||		 '|'||
-	acc_nph_06	||		 '|'||
-	acc_nph_07	||		 '|'||
-	acc_nph_08	||		 '|'||
-	acc_nph_09	||		 '|'||
-	acc_nph_10		
+INSTITUTE	||
+CUSTNO	||
+BUSINESSTYPE	||
+ACCNO	||
+BUSINESSNO	||
+ACC_CURRENCYISO	||
+ACCOPENING	||
+ACCCLOSE	||
+ACCHOLD_INSTITUTE	||
+ACCHOLDCUSTNO	||
+ACCLIMIT	||
+ACCBALANCE	||
+SUMCREDRUNYEAR	||
+SUMDEBRUNYEAR	||
+NUMBERACCOUNTS	||
+CUST_FLAGS	||
+PODTYPE	||
+IBAN	||
+ACC_TYPE	||
+HOLD_MAIL	||
+EMPLNO	||
+PURPOSE	||
+CONTR_DATINCEPT	||
+CONTR_ENDDATE	||
+TARIFF	||
+PAYM_PERIOD	||
+PAYM_MODE	||
+PAYM_TYPE	||
+TYPE_ACQUIS	||
+LIFE_INCREASEYN	||
+LIFE_LENTYN	||
+CONTR_STATUS	||
+INTERMED_TYPE	||
+FK_CSMNO	||
+BIC_PREMPAYOR	
 FROM 
    (
 SELECT 
-		RPAD(:INSTITUTE,4)                        institute,              
-       substr(u.user_type,1,1)||nvl(u.msisdn,' ')   					custno,                
-       substr(u.wallet_number,1,2)                  					businesstype,          
-       substr(u.wallet_number,3,9)                    					accno,                 
-       substr(u.wallet_number,12,9)                    					businessno,            
-       SUBSTR(u.currency_iso,1,3)            							acc_currencyiso,       
-       u.user_id														acc_sph_01,				
-	   u.wallet_type_id													acc_sph_02,				
-	   u.grade_name													acc_sph_03,				
-	   	null									acc_sph_04,
-		null									acc_sph_05,
-		null									acc_sph_06,
-		null									acc_sph_07,
-		null									acc_sph_08,
-		null									acc_sph_09,
-		null									acc_sph_10,
-		null									acc_sph_11,
-		null									acc_sph_12,
-		null									acc_sph_13,
-		null									acc_sph_14,
-		null									acc_sph_15,
-		null									acc_sph_16,
-		null									acc_sph_17,
-		null									acc_sph_18,
-		null									acc_sph_19,
-		null									acc_sph_20,
-		null									acc_sph_21,
-		null									acc_sph_22,
-		null									acc_sph_23,
-		null									acc_sph_24,
-		null									acc_sph_25,
-		null									acc_sph_26,
-		null									acc_sph_27,
-		null									acc_sph_28,
-		null									acc_sph_29,
-		null									acc_sph_30,
-		null									acc_sph_31,
-		null									acc_sph_32,
-		null									acc_sph_33,
-		null									acc_sph_34,
-		null									acc_sph_35,
-		null									acc_sph_36,
-		null									acc_sph_37,
-		null									acc_sph_38,
-		null									acc_sph_39,
-		null									acc_sph_40,
-		null									acc_sph_41,
-		null									acc_sph_42,
-		null									acc_sph_43,
-		null									acc_sph_44,
-		null									acc_sph_45,
-		null									acc_sph_46,
-		null									acc_sph_47,
-		null									acc_sph_48,
-		to_number(null)							acc_nph_01,
-		to_number(null)							acc_nph_02,
-		to_number(null)							acc_nph_03,
-		to_number(null)							acc_nph_04,
-		to_number(null)							acc_nph_05,
-		to_number(null)							acc_nph_06,
-		to_number(null)							acc_nph_07,
-		to_number(null)							acc_nph_08,
-		to_number(null)							acc_nph_09,
-		to_number(null)							acc_nph_10
-		FROM (SELECT /*+ FULL(u) */
+   RPAD(:INSTITUTE,4)                            		institute,              
+       RPAD(substr(u.user_type,1,1)||nvl(u.msisdn,' '),16)  					custno,                  
+       RPAD(substr(u.wallet_number,1,2),4)                  					businesstype,            
+       RPAD(substr(u.wallet_number,3,9),11)                    					accno,                   
+       RPAD(substr(u.wallet_number,12,9),11)                   					businessno,              
+       RPAD(u.currency_iso,3)            										acc_currencyiso,         
+       TO_CHAR(u.wallet_created_on,'YYYYMMDD')    									accopening,              
+       RPAD(decode(u.wallet_status,'N',TO_CHAR(u.wallet_modified_on,'YYYYMMDD'),' '),8)		accclose,                
+       RPAD(' ',4)	                     										acchold_institute,       
+       RPAD(' ',16)                    											accholdcustno,           
+       TO_CHAR(u.wallet_maximum_balance,'S0000000000000.00')     					acclimit,                
+       RPAD(' ',17)     														accbalance,              
+       RPAD(' ',17)     														sumcredrunyear,          
+       RPAD(' ',17)     														sumdebrunyear,           
+       RPAD(' ',4)                   											numberaccounts,          
+       RPAD(' ',24)                                								cust_flags,            
+       RPAD(' ',5)	                     										podtype,                 
+       RPAD(' ',35)			                    								iban,                    
+       ' ' 			                               								acc_type,                
+       ' ' 		                                								hold_mail,               
+       RPAD(' ',16)			                    								emplno,                  
+       RPAD(u.wallet_type_name,32)                    							purpose,                 
+       RPAD(' ',8)			                     								contr_datincept,         
+       RPAD(' ',8)			                     								contr_enddate,           
+       RPAD(' ',32)			                    								tariff,                  
+       RPAD(' ',4)								 			                    paym_period,             
+       RPAD(' ',2)											                    paym_mode,               
+       ' '			                                 							paym_type,               
+       RPAD(' ',2)				                     							type_acquis,             
+       ' '		                                								life_increaseyn,         
+       ' '		                                								life_lentyn,             
+       RPAD(' ',32)				                    							contr_status,            
+       RPAD(' ',5)				                   								intermed_type,           
+       RPAD(' ',12)				                    							fk_csmno,                
+       RPAD(' ',12)				                    							bic_prempayor            
+	   
+	   FROM (
+				SELECT /*+ FULL(u) */
 				u.*, i.currency_iso
 				FROM mv_users_data u 
 					inner join list_actives_last_90_days on list_actives_last_90_days.PARTY_ID = u.user_id and list_actives_last_90_days.wallet_number = u.WALLET_NUMBER
@@ -251,6 +197,7 @@ SELECT
 					AND u.user_type in ('SUBSCRIBER','CHANNEL')
 					AND	u.wallet_created_on < to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS') - 91
 					AND u.wallet_status <> 'N' 
+					
 			UNION 
 			
 				Select 	/*+ FULL(u) */
@@ -263,7 +210,7 @@ SELECT
 						and (:TYPOFFILE <> 'FULL' or (u.status <> 'N' and u.wallet_status <> 'N') )
 						AND ( U.MSISDN = :MSISDN OR 'ALL' =  :MSISDN )
 			) u
-		ORDER   BY  
+ORDER   BY    
             custno,         
             businesstype,   
             accno,          

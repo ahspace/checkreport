@@ -1,12 +1,12 @@
 /*
-** SCRIPT SQL : IN_CUSTOMER-1.1.9.sql
-** VERSION    : 1.1.9
+** SCRIPT SQL : IN_CUSTOMER-1.2.0.sql
+** VERSION    : 1.2.0
 ** DATE       : 25/05/2018
 ** MODIFIED DATE: 21/08/2018 
 ** DESCRIPTION: Change regarding Performance improvement
 •	Uses bind variables, instead of substitution variables => stable/same SQL_ID 
-•	Uses raw data (no temporary tables were used) => it can be executed at any moment without waiting for temporary tables to finish
-
+•	Uses raw data (no temporary tables are used) => it can be executed at any moment without waiting for temporary tables to finish
+19/11/2019 : Remove inactive users in fullactive mode
 */
 with 
 mv_txn_header_as_of_date as (
@@ -203,6 +203,8 @@ from (select distinct rpad(:INSTITUTE,4) institute
 					:TYPOFFILE = 'FULLACTIVE' 
 					AND u.user_type in ('SUBSCRIBER','CHANNEL')
 					AND u.wallet_primary = 'Y'
+					AND u.wallet_status <> 'N'
+                    AND u.status <> 'N'
 			UNION  
 			
 				SELECT /*+ FULL(u) */
