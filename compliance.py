@@ -302,7 +302,7 @@ def cleanup(data):
             data['genparams']['DBPASSWORD'] = Encryption().encrypt(data['genparams']['DBPASSWORD']).decode('utf-8')
             f.write(json.dumps(data, indent=4))
         log.info("1;EME;SUCCESS;200;;;;;;running cleanup")
-        getlag()
+        #getlag()
         if data['genparams']['DOUBLE_RUN_PRO_PP']=='Y':
             cptopp(data)
     except Exception as e:
