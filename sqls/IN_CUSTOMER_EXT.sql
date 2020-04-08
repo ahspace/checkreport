@@ -9,6 +9,8 @@
 *       Includes Marie updates
 *       Includes full mode script
 19/11/2019 : Remove inactive users in fullactive mode
+27/11/2019 : Adapt CompiV1.2 changes
+             Added grade_name as CUST_SPH_26																		
 */
 with
 mv_txn_header_as_of_date as (
@@ -30,15 +32,16 @@ where transfer_date < to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS')
     and modified_on < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
 )
 , mv_mtx_transaction_items as (
-select transfer_id
+select
+      transfer_id
     , unreg_user_id
-from mtx_transaction_items
+from mtx_transaction_items ti
 where transfer_date >= to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS')
     and transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
     and transaction_type = 'MR'
 )
 , mv_users_data as (
-select
+select /*+ FULL(mp) */
     decode(mw.user_type,'OPERATOR', mw.user_type, nvl(mp.user_type, u.user_type)) user_type
     , nvl2(mp.user_id, mp.msisdn, nvl2(u.user_id, u.msisdn, mw.msisdn)) msisdn
     , nvl(mp.user_name, u.user_name) user_name
@@ -46,12 +49,12 @@ select
     , nvl(mp.address1, u.address1) address1
     , nvl(mp.city, u.city) city
     , case
-        when regexp_like(mp.external_code, '^1[[:upper:]]{5}.+') then decode(substr(mp.external_code,5,2),'XX',null,substr(mp.external_code,5,2))
-        else null
+        when regexp_like(mp.external_code, '^1[[:upper:]]{5}.+') and substr(mp.external_code,5,2)<> 'XX' then substr(mp.external_code,5,2)
+        else upper(mp.RESIDENCE_COUNTRY)
     end addon_homecountry
     , case
-        when regexp_like(mp.external_code, '^1[[:upper:]]{5}.+') then decode(substr(mp.external_code,3,2),'XX',null,substr(mp.external_code,3,2))
-        else null
+        when regexp_like(mp.external_code, '^1[[:upper:]]{5}.+') and substr(mp.external_code,3,2)<> 'XX' then substr(mp.external_code,3,2)
+        else upper(mp.NATIONALITY)
     end addon_nationality
     , upper(trim(nvl2(mp.user_id, mp.state, nvl2(u.user_id, u.designation, mw.msisdn)))) user_mark
     , trunc(nvl(mp.dob, u.dob),'DD') dob
@@ -75,30 +78,27 @@ select
     ,mc.category_name
     ,NVL(u.CATEGORY_CODE, mp.CATEGORY_CODE) as CATEGORY_CODE
     ,upper(trim(nvl(mp.state,u.state))) as state
-    ,case when REGEXP_LIKE(mp.external_code, '^1[[:upper:]]{5}.+') then
-                   nvl((select idtype_label from dbref_idtypes where type_id = substr(mp.external_code,2,1)),'OTHER')
-                 else
-                  null
+  ,case when REGEXP_LIKE(mp.external_code, '^1[[:upper:]]{5}.+') then
+                   (select idtype_label from dbref_idtypes where type_id = substr(mp.external_code,2,1))
+     else nvl(mp.id_type,'OTHER')
                  end as addon_idtype
      ,replace(replace(convert(mp.id_no, 'US7ASCII', 'WE8ISO8859P1'),chr(10),' '),chr(13),' ') as ID_NO
      ,case when REGEXP_LIKE(nvl(mp.external_code, u.external_code), '^1[[:upper:]]{5}.+') then
-                   substr(mp.external_code,7)
-                         else
-                  replace(replace(convert(nvl(mp.external_code,u.external_code), 'US7ASCII', 'WE8ISO8859P1'),chr(10),' '),chr(13),' ')
+				substr(mp.external_code,7)
+        else nvl(ID_NO, replace(replace(convert(nvl(mp.external_code,u.external_code), 'US7ASCII', 'WE8ISO8859P1'),chr(10),' '),chr(13),' ') )
                  end as external_code
      ,nvl(mp.address2,u.address2) as address2
          , nvl(u.network_code, mp.network_code) as network_code
          ,mw.wallet_number
          , cg.grade_name
+		 ,mw.modified_on as wallet_modified_on								  
 from mtx_wallet mw
     left join mtx_party mp on (mw.user_id = mp.user_id and mw.user_type = mp.user_type)
     left join users u on (mw.user_id = u.user_id and mw.user_type <> 'SUBSCRIBER')
     left join mtx_category_relations head_mcr on (head_mcr.to_category =nvl(mp.category_code, u.category_code)) and head_mcr.relation_type ='OWNER' and head_mcr.status='Y'
     left join mtx_categories mc on mc.category_code= nvl(mp.category_code,u.category_code)
-    left join mtx_trf_cntrl_profile mcp on (mw.mpay_profile_id = mcp.profile_id)
     left join mtx_categories head_mc on head_mcr.from_category = head_mc.category_code
-    left join channel_grades cg on (mcp.grade_code = cg.grade_code and cg.status = 'Y')
-    left join sys_payment_method_subtypes spms on (mw.payment_type_id = spms.payment_type_id)
+    left join channel_grades cg on (mw.user_grade = cg.grade_code and cg.status = 'Y')
 where mw.user_type = 'OPERATOR' or mp.user_id is not null or u.user_id is not null
 )
 ,
@@ -152,7 +152,7 @@ list_actives_last_90_days AS (
 
 /*For FULL Mode*/
  mv_txn_header as (
-select /*+ INDEX(th) */
+select
         case
             when trunc(modified_on) >= trunc(transfer_date) and trunc(modified_on) < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS') then trunc(modified_on)
             else trunc(transfer_date)
@@ -172,7 +172,7 @@ where transfer_date >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
     and transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
 ),
  txn as(
- select /*+ INDEX(TIS) INDEX(TIR)*/
+ select
  tis.pseudo_user_id sender_pseudo_user_id,
   tis.wallet_number as sender_wallet_number,
   tir.txn_mode,
@@ -211,7 +211,7 @@ where transfer_date >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
             and tis.transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
 
 	UNION ALL
-	select /*+ INDEX(tira) INDEX(tisa)*/
+	select 
   tisa.pseudo_user_id sender_pseudo_user_id,
 	tisa.wallet_number as sender_wallet_number,
 	tira.txn_mode,
@@ -367,7 +367,7 @@ SELECT Distinct
         translate(SUBSTR(u.address1,33),'"',' ')                        cust_sph_03,        --
         translate(u.address2,'"',' ')                           cust_sph_04,        --
         translate(SUBSTR(u.city,29),'"',' ')                            cust_sph_05,        --
-        translate(u.external_code,'"',' ')                      cust_sph_06,        --
+        decode(addon_idtype, 'PASSPORT', '',translate(u.external_code,'"',' '))                  cust_sph_06,        --
         u.id_no                                                 cust_sph_07,        --
         u.addon_idtype                                                  cust_sph_08,        --
         u.category_code                                         cust_sph_09,        --
@@ -388,7 +388,7 @@ SELECT Distinct
 
 		 null                                                      cust_sph_24,
          null                                                           cust_sph_25,
-        null                                                            cust_sph_26,
+        u.grade_name                                                            cust_sph_26,
         null                                                            cust_sph_27,
         null                                                            cust_sph_28,
         null                                                            cust_sph_29,
@@ -461,7 +461,8 @@ FROM   (
                                 AND u.wallet_primary = 'Y'
                                 AND u.wallet_status <> 'N'
                                 AND     (   (u.creation_date  >=  to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS') AND u.creation_date   <  to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS'))
-                                        OR (u.modification_date  >=  to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS') AND u.modification_date  <  to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')) )
+                                        OR (u.modification_date  >=  to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS') AND u.modification_date  <  to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS'))
+										OR (u.wallet_modified_on  >=  to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS') AND u.wallet_modified_on  <  to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')))
                                 and (:TYPOFFILE <> 'FULL' or (u.status <> 'N' and u.wallet_status <> 'N' and u.wallet_primary ='Y') )
                                 AND ( U.MSISDN = :MSISDN OR 'ALL' =  :MSISDN )
                 ) u

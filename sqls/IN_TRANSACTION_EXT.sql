@@ -8,26 +8,7 @@
 
 */
 with
-mv_txn_header_as_of_date as (
-select /*+ materialize */
-    trunc(modified_on) as_of_date,
-    created_on,
-    created_by,
-	transfer_date,
-	transfer_id,
-    transfer_subtype,
-	transfer_status,
-	reconciliation_by,
-	service_type,
-	attr_2_name,
-	attr_2_value,
-    reference_number
-from mtx_transaction_header
-where transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
-    and modified_on >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
-    and modified_on < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
-)
-, mv_txn_header as (
+mv_txn_header as (
 select /*+ INDEX(th) */
         case
             when trunc(modified_on) >= trunc(transfer_date) and trunc(modified_on) < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS') then trunc(modified_on)
@@ -113,55 +94,6 @@ where mw.user_type = 'OPERATOR' or mp.user_id is not null or u.user_id is not nu
             and tir.transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
             and tis.transfer_date >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
             and tis.transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
-
-	UNION ALL
-	select /*+ INDEX(tira) INDEX(tisa)*/
-  tisa.pseudo_user_id sender_pseudo_user_id,
-	tisa.wallet_number as sender_wallet_number,
-	tira.txn_mode,
-	tira.wallet_number as receiver_wallet_number,
-	tira.party_id as receiver_user_id,
-	tisa.service_type,
-	tisa.party_id as sender_user_id,
-	tira.pseudo_user_id receiver_pseudo_user_id,
-	tira.account_id as receiver_msisdn,
-	tisa.account_id as sender_msisdn,
-  tisa.requested_value/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)as transaction_amount,
-  decode(tira.transaction_type,'MR',case when tira.service_type in ('ROLLBACK','TXNCORRECT') then decode(tira.party_id,'IND03','CR',decode(tira.second_party,'IND03','SCR',tira.transaction_type))
-  else tira.transaction_type end,tira.transaction_type) as transaction_type,
-  sum(case
-                    when (tira.transaction_type = 'SCR'
-                            or (tira.transaction_type = 'MR' and tira.service_type in ('ROLLBACK','TXNCORRECT') and tira.second_party = 'IND03'))
-                    then tira.transfer_value/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)
-                    else 0
-                end) over (partition by tisa.transfer_id) as total_sc,
-  tisa.transfer_id,
-  tisa.previous_balance/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)as sender_pre_balance,
-        tisa.post_balance/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)as sender_post_balance,
-        tisa.transfer_subtype,
-        tisa.previous_balance/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)as receiver_pre_balance,
-        tisa.post_balance/nvl((select DEFAULT_VALUE
-        from  MTX_SYSTEM_PREFERENCES
-        where PREFERENCE_CODE = 'CURRENCY_FACTOR'),100)as receiver_post_balance
-   from mv_txn_header_as_of_date thid
-         inner join mtx_transaction_items tira on (thid.transfer_id = tira.transfer_id)
-         inner join mtx_transaction_items tisa on (tira.transfer_id = tisa.transfer_id
-             and tira.party_id = tisa.second_party
-             and tira.second_party = tisa.party_id
-             and tira.transfer_value = tisa.transfer_value)
-    where ((tira.transaction_type = 'MR' and tisa.transaction_type = 'MP')
-             or (tira.transaction_type = 'CR' and tisa.transaction_type = 'CP')
-             or (tira.transaction_type = 'SCR' and tisa.transaction_type = 'SCP'))
 			 ),
 txn_full as(
 select
@@ -271,10 +203,8 @@ th.transfer_id,
     kyc.rec_fname as unreg_first_name,
     nvl(txn.receiver_pre_balance,0) as receiver_pre_balance,
     nvl(txn.receiver_post_balance,0) as receiver_post_balance
- from(
-select * from mv_txn_header
-    union all
-    select * from mv_txn_header_as_of_date) th
+ from
+mv_txn_header th
     inner join txn
 	on (th.transfer_id = txn.transfer_id and txn.transaction_type = 'MR')
 	inner join sys_service_types sst on (txn.service_type = sst.service_type)

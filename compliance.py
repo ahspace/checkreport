@@ -4,7 +4,7 @@ It will read grtool configuration, logging configuration
 """
 # -*- coding: utf-8 -*-
 __author__ = "ZMSH2370"
-__version__ = "2.0"
+__version__ = "2.3.3"
 
 import sys
 import os
@@ -29,7 +29,9 @@ log = logging.getLogger("compliance Export")
 lag_value = ""
 lag_check_time = ""
 reconcileData = {}
-
+ZIP_ELAPSED = ""
+CHECKSUM_ELAPSED = ""
+ZIP_FILENAME = ""
 #####Argument parsing############
 def parseArg():
     """
@@ -69,7 +71,6 @@ def readConfig():
     """
     try:
         log.debug("1;EME;RUNNING;000;Complaince.py;Setting Configuration")
-        #with open('config.json') as config_file:
         config = json.load(open('config.json'),object_pairs_hook=OrderedDict)
         log.debug("1;EME;SUCCESS;200;Setting Configuration")
         os.environ['NLS_LANG']='FRENCH_FRANCE.UTF8'
@@ -189,6 +190,7 @@ def runextraction(data):
     params = {'INSTITUTE': data['genparams']['INSTITUTE'], 'TYPOFFILE': runtype.upper(
     ), 'TS_STARTD': TS_STARTD, 'TS_CURD': TS_CURD, 'MSISDN': runparams['MSISDN']}
     begin_time = time.strftime("%d/%m/%Y %H:%M:%S")
+    extlist = []
     log.info("1;EME;RUNNING;000;Compliance.py;PARAMETER:" + str(params))
     try:
         for index, record in enumerate(data['sqlparams']):
@@ -206,11 +208,13 @@ def runextraction(data):
                         outputfile.write(''.join(str(s) for s in row) + '\n')
                     end_time = time.strftime("%d/%m/%Y %H:%M:%S")
                     elapsed_time = time.mktime(time.strptime(end_time,"%d/%m/%Y %H:%M:%S")) - time.mktime(time.strptime(strt_time,"%d/%m/%Y %H:%M:%S"))
+                    extlist.append(elapsed_time)
                     log.info(index+";EME;SUCCESS;200;"+EME_DIR+";"+record['outputfile']+";StartDate="+TS_STARTD+";EndDate="+TS_CURD+";ExecTime "+str(elapsed_time)+"(s);")
+        compressreports(data)
         end_time = time.strftime("%d/%m/%Y %H:%M:%S")
         elapsed_time = time.mktime(time.strptime(end_time,"%d/%m/%Y %H:%M:%S")) - time.mktime(time.strptime(begin_time,"%d/%m/%Y %H:%M:%S"))
         log.info("1;EME;SUCCESS;200;;;StartDate="+TS_STARTD+";EndDate="+TS_CURD+";ExecTime "+str(elapsed_time)+"(s); Running extraction")
-        compressreports(data)
+        runkpi(data, ';', elapsed_time, extlist)
     except Exception as e:
         log.exception("1;EME;FAILURE;700;EXTRACTION ERROR" + str(e), exc_info=False)
         sys.exit(0)
@@ -220,6 +224,7 @@ def compressreports(data):
     It compresses the folder with .zip extension
     """
     global ZIP_FILENAME
+    global ZIP_ELAPSED
     ZIP_DIR=data['genparams']['EMEBASEPATH']+runparams['OUT_DIR']
     if runtype in ['full']:
         ZIP_FILENAME = data['genparams']['INSTITUTE'] + "_" + TS_CURD_YYYYMMDD
@@ -232,6 +237,7 @@ def compressreports(data):
         end_time = time.strftime("%d/%m/%Y %H:%M:%S")
         elapsed_time = time.mktime(time.strptime(end_time,"%d/%m/%Y %H:%M:%S")) - time.mktime(time.strptime(strt_time,"%d/%m/%Y %H:%M:%S"))
         log.info("1;EME;SUCCESS;200;"+ZIP_DIR+";"+ZIP_FILENAME+".zip;;;ExecTime "+str(elapsed_time)+"(s); Running compression")
+        ZIP_ELAPSED = str(datetime.timedelta(seconds=elapsed_time))
         md5checksum(data)
     except Exception as e:
         log.exception("1;EME;FAILURE;700;ZIP ERROR" + str(e), exc_info=False)
@@ -245,6 +251,7 @@ def md5checksum(data):
     MD5_FILENAME=ZIP_FILENAME + '.zip.md5'
     log.info("1;EME;RUNNING;000;Complaince.py;"+MD5_DIR+";"+MD5_FILENAME+";;;Running md5checksum")
     strt_time = time.strftime("%d/%m/%Y %H:%M:%S")
+    global CHECKSUM_ELAPSED
     try:
         with open((MD5_DIR+MD5_FILENAME), 'w+') as md5_file:
             filehash = hashlib.md5()
@@ -253,7 +260,8 @@ def md5checksum(data):
         end_time = time.strftime("%d/%m/%Y %H:%M:%S")
         elapsed_time = time.mktime(time.strptime(end_time,"%d/%m/%Y %H:%M:%S")) - time.mktime(time.strptime(strt_time,"%d/%m/%Y %H:%M:%S"))        
         log.info("1;EME;SUCCESS;200;"+MD5_DIR+";"+MD5_FILENAME+";;;ExecTime "+str(elapsed_time)+"(s); Running md5checksum")
-        cleanup(data)
+        CHECKSUM_ELAPSED = str(datetime.timedelta(seconds=elapsed_time))
+        #cleanup(data)
     except Exception as e:
         log.exception("1;EME;FAILURE;700;MD5 ERROR" + str(e), exc_info=False)
         sys.exit(0)
@@ -302,7 +310,7 @@ def cleanup(data):
             data['genparams']['DBPASSWORD'] = Encryption().encrypt(data['genparams']['DBPASSWORD']).decode('utf-8')
             f.write(json.dumps(data, indent=4))
         log.info("1;EME;SUCCESS;200;;;;;;running cleanup")
-        #getlag()
+        getlag()
         if data['genparams']['DOUBLE_RUN_PRO_PP']=='Y':
             cptopp(data)
     except Exception as e:
@@ -320,6 +328,108 @@ def getlag():
          elapsed_time = time.mktime(time.strptime(end_time,"%d/%m/%Y %H:%M:%S")) - time.mktime(time.strptime(begin_time,"%d/%m/%Y %H:%M:%S"))
          log.info("1;EME;SUCCESS;200;Compliance.py; LAG :" + str(checklagtime) + "(s);")
          return str(checklagtime)
+
+def tzone():
+    timezone = time.tzname[0].split()
+    czone = ''.join(timezone)
+    return czone
+
+def runkpi(data, sep, dot_time, exttime):
+    """
+    Creates the EME KPI report for the various stats in the extraction
+    """
+    if runtype in ['full']:
+        overallstatus = "TRUE"
+        KPI_DIR = data['genparams']['KPIBASEPATH'] + data['genparams'][runtype + 'parameters']['KPI_DIR'] + data['genparams']['INSTITUTE'] + '_' + TS_CURD_YYYYMMDD
+        KPI_FILENAME = data['genparams']['INSTITUTE'] + '_' + TS_CURD_YYYYMMDD + '_Control.csv'
+        EME_DIR = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + data['genparams']['INSTITUTE'] + '_' + TS_CURD_YYYYMMDD
+        log.info("1;EME;RUNNING;000;Compliance.py;" + KPI_DIR + ";" + KPI_FILENAME + ";;;Running EME KPI")
+        VERSION = data['genparams']['VERSION']
+        zipfilefullpath = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + '/' + data['genparams']['INSTITUTE'] + "_" + TS_CURD_YYYYMMDD + '.zip'
+        md5filefullpath = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + '/' + data['genparams']['INSTITUTE'] + '_' + TS_CURD_YYYYMMDD + '.zip.md5'
+    else:
+        overallstatus = "TRUE"
+        KPI_DIR = data['genparams']['KPIBASEPATH'] + data['genparams'][runtype + 'parameters']['KPI_DIR'] + data['genparams']['INSTITUTE'] + '_' + TS_STARTD_YYYYMMDD
+        KPI_FILENAME = data['genparams']['INSTITUTE'] + '_' + TS_STARTD_YYYYMMDD + '_Control.csv'
+        EME_DIR = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + data['genparams']['INSTITUTE'] + '_' + TS_STARTD_YYYYMMDD
+        log.info("1;EME;RUNNING;000;Compliance.py;" + KPI_DIR + ";" + KPI_FILENAME + ";;;Running EME KPI")
+        VERSION = data['genparams']['VERSION']
+        zipfilefullpath = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + '/' + data['genparams']['INSTITUTE'] + "_" + TS_STARTD_YYYYMMDD + '.zip'
+        md5filefullpath = data['genparams']['EMEBASEPATH'] + runparams['OUT_DIR'] + '/' + data['genparams']['INSTITUTE'] + '_' + TS_STARTD_YYYYMMDD + '.zip.md5'
+    strt_time = time.strftime("%d/%m/%Y %H:%M:%S")
+    global reconcileData
+    try:
+        if not os.path.exists(KPI_DIR):
+            os.makedirs(KPI_DIR)
+        with codecs.open((KPI_DIR + '/' + KPI_FILENAME), 'w+', 'utf-8') as kpi_file:
+            kpi_file.write("Generation Date" + sep +
+                           datetime.datetime.today().strftime('%d/%m/%Y %H:%M:%S') + '\n')
+            kpi_file.write("Data of" + sep + TS_STARTD + '\n')
+            kpi_file.write("Timezone" + sep + tzone() + '\n')
+            kpi_file.write(
+                "Country" + sep + data['genparams']['AFFILIATENAME'] + '\n')
+            kpi_file.write("Duration of treatment" + sep + str(datetime.timedelta(seconds=dot_time)) + sep + '\n')
+            kpi_file.write("Compliance Package Version" + sep + VERSION + sep + '\n')
+            kpi_file.write('\n')
+            kpi_file.write("Control" + sep + "Date" + sep + "Lag" + '\n')
+            kpi_file.write("Synchronization DBREF" + sep + lag_check_time + sep + lag_value + '\n')
+            kpi_file.write('\n')
+            kpi_file.write('\n')
+            kpi_file.write("Extraction"+sep+"Extraction time"+sep+"End of the extraction"+sep+"File size"+sep+"Nb of lines"+sep+"Nb of distinct lines"+'\n')
+            val = 0
+            for record in data['sqlparams']:
+                kpi_file.write(record['outputfile'] + sep )
+                kpi_file.write(str(datetime.timedelta(seconds=exttime[val])) + sep)
+                kpi_file.write(time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(os.path.getmtime(EME_DIR +'/'+ record['outputfile']))) + sep)
+                kpi_file.write(str(os.path.getsize(EME_DIR +'/'+ record['outputfile'])) + sep )
+                fileallcount = countall(EME_DIR, record['outputfile'])
+                filetransactionsum = 0
+                kpi_file.write(fileallcount + sep )
+                if (len(record['rowparam']) > 0):
+                   kpi_file.write(str(countdistinct(EME_DIR, record['outputfile'], record['delimiter'], record['rowparam'])) + sep + '\n')
+                else:
+                    kpi_file.write(fileallcount + sep + '\n')
+                val += 1
+            kpi_file.write(ZIP_FILENAME + ".zip" + sep + ZIP_ELAPSED + sep +time.strftime('%d/%m/%Y %H:%M:%S',time.gmtime(os.path.getmtime(zipfilefullpath))) + sep + str(os.path.getsize(zipfilefullpath)) + '\n')
+            kpi_file.write(ZIP_FILENAME + '.zip.md5' + sep + CHECKSUM_ELAPSED + sep +
+                           time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(os.path.getmtime(md5filefullpath))) + sep +
+                           str(os.path.getsize(md5filefullpath)) + '\n')
+            kpi_file.write('\n')
+            if (overallstatus == "TRUE"):
+                overallfilestatus = "OK"
+            else:
+                overallfilestatus = "KO"
+            end_time = time.strftime("%d/%m/%Y %H:%M:%S")
+            elapsed_time = time.mktime(time.strptime(end_time, "%d/%m/%Y %H:%M:%S")) - time.mktime(
+                time.strptime(strt_time, "%d/%m/%Y %H:%M:%S"))
+            log.info("1;EME;SUCCESS;200;" + KPI_DIR + ";" + KPI_FILENAME + ";;;ExecTime " + str(elapsed_time) + "(s);")
+            cleanup(data)
+    except Exception as e:
+        log.exception("1;EME;FAILURE;700;KPI ERROR" + str(e), exc_info=True)
+        sys.exit(0)
+
+def countall(EME_DIR, filename):
+    with open(EME_DIR + '/' + filename) as f:
+        return str(sum(1 for _ in f))
+
+
+def countdistinct(EME_DIR, filename, delimiter, rowparam):
+    with open(EME_DIR + '/' + filename) as f:
+        distinct = 0
+        lastrowval = ''
+        rowparam = [int(i) for i in rowparam]
+        for index, line in enumerate(f):
+            if filename in ['in_transaction.txt']:
+                 currrowval = line.split(delimiter)[rowparam[0]][rowparam[1]:rowparam[2]]
+            elif filename in ['in_transaction_extension.txt']:
+                currrowval = line.split(delimiter)[rowparam[0]][rowparam[1]:rowparam[2]+1] + line.split(delimiter)[rowparam[2]][rowparam[1]:rowparam[2]+6]
+            else:
+                currrowval = line.split(delimiter)[rowparam[0]][rowparam[1]:rowparam[1] + rowparam[2]+1]
+
+            if lastrowval.strip() != currrowval.strip():
+                distinct += 1
+                lastrowval = currrowval
+        return str(distinct)
 
 if __name__ == '__main__':
     try:

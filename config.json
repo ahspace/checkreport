@@ -1,6 +1,6 @@
 {
     "genparams": {
-		"VERSION": "2.1",
+		"VERSION": "2.3.3",
         "AFFILIATENAME": "",
         "INSTITUTE": "",
         "DBHOSTNAME": "",
@@ -12,6 +12,7 @@
         "TEMPO": "300",
         "NBRETRY": "90",
         "EMEBASEPATH": "",
+        "KPIBASEPATH": "",
         "DOUBLE_RUN_PRO_PP": "N",
         "PP_EMEBASEPATH": "",
         "fullparameters": {
@@ -55,6 +56,7 @@
             "bindvars": [],
             "delimiter": " ",
             "outputfile": "in_country.txt",
+            "rowparam": [],
             "sqlfile": "IN_COUNTRY.sql"
         },
         {
@@ -65,7 +67,13 @@
                 "TS_CURD",
                 "MSISDN"
             ],
+            "delimiter": " ",
             "outputfile": "in_customer.txt",
+            "rowparam": [
+                0,
+                4,
+                8
+            ],
             "sqlfile": "IN_CUSTOMER.sql"
         },
         {
@@ -76,33 +84,43 @@
                 "TS_CURD",
                 "MSISDN"
             ],
+            "delimiter": "|",
             "outputfile": "in_customer_extension_hist.txt",
+            "rowparam": [
+                1,
+                1,
+                8
+            ],
             "sqlfile": "IN_CUSTOMER_EXT.sql"
         },
         {
             "bindvars": [
                 "INSTITUTE",
-                "TYPOFFILE",
-                "TS_STARTD",
                 "TS_CURD",
                 "MSISDN"
             ],
-            "stats": [
-                "Nombre d'Enregistrements ",
-                "Comptes distincts "
-            ],
+            "delimiter": " ",
             "outputfile": "in_account.txt",
+            "rowparam": [
+                0,
+                4,
+                8
+            ],
             "sqlfile": "IN_ACCOUNT.sql"
         },
         {
             "bindvars": [
                 "INSTITUTE",
                 "TS_CURD",
-                "TYPOFFILE",
-                "TS_STARTD",
                 "MSISDN"
             ],
+            "delimiter": "|",
             "outputfile": "in_account_extension_hist.txt",
+            "rowparam": [
+                1,
+                1,
+                8
+            ],
             "sqlfile": "IN_ACCOUNT_EXT.sql"
         },
         {
@@ -111,6 +129,12 @@
                 "TS_CURD",
                 "MSISDN"
             ],
+            "rowparam": [
+                1,
+                0,
+                29
+                ],
+            "delimiter": "XOF",
             "outputfile": "in_transaction.txt",
             "sqlfile": "IN_TRANSACTION.sql"
         },
@@ -119,6 +143,12 @@
                 "INSTITUTE",
                 "TS_CURD",
                 "MSISDN"
+            ],
+            "delimiter": "|",
+            "rowparam": [
+                7,
+                1,
+                8
             ],
             "outputfile": "in_transaction_extension.txt",
             "sqlfile": "IN_TRANSACTION_EXT.sql"
