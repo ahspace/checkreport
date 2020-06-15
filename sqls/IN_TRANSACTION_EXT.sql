@@ -1,7 +1,8 @@
 /*
-** SCRIPT SQL : IN_TRANSACTION_EXT-1.1.1.sql
+** SCRIPT SQL : IN_TRANSACTION_EXT.sql
+** VERSION : 2.3.3.C1
 ** DATE       : 25/05/2018
-** MODIFIED DATE: 14/08/2019
+** MODIFIED DATE: 04/05/2020
 ** DESCRIPTION: TR_SP_11 column is filled with the local currency 
 				TR_NP_03 is filled with amount
 				Removal of DBREF_TXN_DWH
@@ -9,7 +10,7 @@
 */
 with
 mv_txn_header as (
-select /*+ INDEX(th) */
+select
         case
             when trunc(modified_on) >= trunc(transfer_date) and trunc(modified_on) < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS') then trunc(modified_on)
             else trunc(transfer_date)
@@ -30,7 +31,7 @@ where transfer_date >= to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')-1
     and transfer_date < to_date(:TS_CURD,'DD/MM/YYYY HH24:MI:SS')
 ),
 mv_users_data as (
-select /*+ INDEX(mp) */
+select 
     mw.wallet_number,
     mc.domain_code,
     decode(mw.user_type,'OPERATOR', mw.user_type, nvl(mp.user_type, u.user_type)) as user_type,
@@ -44,7 +45,7 @@ from mtx_wallet mw
 where mw.user_type = 'OPERATOR' or mp.user_id is not null or u.user_id is not null
 ),
  txn as(
- select /*+ INDEX(TIS) INDEX(TIR)*/
+ select 
  tis.pseudo_user_id sender_pseudo_user_id,
   tis.wallet_number as sender_wallet_number,
   tir.txn_mode,

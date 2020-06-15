@@ -1,13 +1,18 @@
 {
     "genparams": {
-		"VERSION": "2.3.3",
+        "VERSION": "2.3.3.C1",
         "AFFILIATENAME": "",
         "INSTITUTE": "",
         "DBHOSTNAME": "",
         "DBUSERNAME": "",
         "DBPASSWORD": "",
-        "DBSID": "PRTP",
-        "DBPORT": "20300",
+        "DBSID": "",
+        "DBPORT": "",
+        "TANGOHOSTNAME": "",
+        "TANGOUSERNAME": "",
+        "TANGOPASSWORD": "",
+        "TANGOSID": "",
+        "TANGOPORT": "",
         "DB_TYPE_TANGO": "N",
         "TEMPO": "300",
         "NBRETRY": "90",
@@ -133,7 +138,7 @@
                 1,
                 0,
                 29
-                ],
+            ],
             "delimiter": "XOF",
             "outputfile": "in_transaction.txt",
             "sqlfile": "IN_TRANSACTION.sql"

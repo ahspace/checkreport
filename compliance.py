@@ -4,7 +4,7 @@ It will read grtool configuration, logging configuration
 """
 # -*- coding: utf-8 -*-
 __author__ = "ZMSH2370"
-__version__ = "2.3.3"
+__version__ = "2.3.3.C1"
 
 import sys
 import os
@@ -90,12 +90,15 @@ def connectDB(config):
     try:
         log.debug("1;EME;RUNNING;000;Complaince.py;Setting Database")
         config['genparams']['DBPASSWORD']=Encryption().decrypt(config['genparams']['DBPASSWORD'])
+        config['genparams']['TANGOPASSWORD'] = Encryption().decrypt(config['genparams']['TANGOPASSWORD'])
         global oracle
         log.debug("1;EME;RUNNING;000;Complaince.py;Connecting Database")
         oracle = Oracle()
         log.debug("1;EME;RUNNING;000;Compliance.py;Oracle Instance initiated")
         oracle.connect(config['genparams']['DBUSERNAME'], config['genparams']['DBPASSWORD'],
                        config['genparams']['DBHOSTNAME'], config['genparams']['DBPORT'], config['genparams']['DBSID'])
+        oracle.tangoconnect(config['genparams']['TANGOUSERNAME'], config['genparams']['TANGOPASSWORD'],
+                       config['genparams']['TANGOHOSTNAME'], config['genparams']['TANGOPORT'], config['genparams']['TANGOSID'])
         log.debug("1;EME;SUCCESS;200;Setting Database")
         checkPrerequisites(config)
     except Exception as e:
@@ -203,7 +206,10 @@ def runextraction(data):
                     log.info(index+";EME;RUNNING;000;Compliance.py;"+EME_DIR+";"+record['outputfile']+";StartDate="+TS_STARTD+";EndDate="+TS_CURD+";Running:"+record['sqlfile'])
                     strt_time = time.strftime("%d/%m/%Y %H:%M:%S")
                     sql = sql_file.read()
-                    outputset = oracle.execute(sql, params, realparams)
+                    if record['sqlfile'] in ['IN_ACCOUNT.sql', 'IN_ACCOUNT_EXT.sql']:
+                        outputset = oracle.tangoexecute(sql, params, realparams)
+                    else:
+                        outputset = oracle.execute(sql, params, realparams)
                     for row in outputset:
                         outputfile.write(''.join(str(s) for s in row) + '\n')
                     end_time = time.strftime("%d/%m/%Y %H:%M:%S")
@@ -308,6 +314,7 @@ def cleanup(data):
                 log.info("1;EME;RUNNING;000;Compliance.py;;;;;updating configuration TS_STARTD with " + TS_CURD)
                 data['genparams'][runtype + 'parameters']['TS_STARTD'] = TS_CURD
             data['genparams']['DBPASSWORD'] = Encryption().encrypt(data['genparams']['DBPASSWORD']).decode('utf-8')
+            data['genparams']['TANGOPASSWORD'] = Encryption().encrypt(data['genparams']['TANGOPASSWORD']).decode('utf-8')
             f.write(json.dumps(data, indent=4))
         log.info("1;EME;SUCCESS;200;;;;;;running cleanup")
         getlag()
@@ -437,4 +444,5 @@ if __name__ == '__main__':
     except Exception as e:
         log.exception("1;EME;FAILURE;700;MAIN ERROR" + str(e), exc_info=False)
         sys.exit(0)
+
 

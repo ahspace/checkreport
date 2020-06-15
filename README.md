@@ -1,5 +1,19 @@
 # ChangeLogs
 
+## VERSION 2.3.3.C1
+
+Improvements in the cloud package:
+
+-> Instead of one, 2 dbs connection established(omreporting, Tango) for In_Account, In_Account_ext.
+
+-> Files effected:
+
+Compliance.py
+config.json
+Oracle.py
+
+-> Removal of hints(FULL) as it degrading the performance on cloud.
+
 ## VERSION 2.3.3
 
 1. Fix file renaming issue : in_transaction_extension_hist.txt renamed  to in_transaction_extension.txt 

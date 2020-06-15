@@ -6,4 +6,4 @@ WHEN value is null THEN ' Critical Data Broken status'
 WHEN (((sysdate - to_date(DATUM_TIME,'MM/DD/YYYY HH24:MI:SS'))*24*60) > 30) THEN 'DELAY'
 ELSE 'OK'
 END as Sync_status, '' || value
-from v$dataguard_stats@POMGT.FT where name='apply lag'
+from v$dataguard_stats@PO<country_code>T.FT where name='apply lag'

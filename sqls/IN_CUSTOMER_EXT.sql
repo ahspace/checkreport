@@ -1,8 +1,8 @@
 /*
-** SCRIPT SQL : IN_CUSTOMER_EXT-1.1.6.sql
-** VERSION    : 1.1.6
+** SCRIPT SQL : IN_CUSTOMER_EXT.sql
+** VERSION    : 2.3.3.C1
 ** DATE       : 02/08/2018
-** MODIFIED DATE: 15/10/2019
+** MODIFIED DATE: 04/05/2020
 ** DESCRIPTION:  Change regarding Performance improvement
 *       Uses bind variables, instead of substitution variables => stable/same SQL_ID
 *       Uses raw data (no temporary tables were used) => it can be executed at any moment without waiting for temporary tables to finish
@@ -41,7 +41,7 @@ where transfer_date >= to_date(:TS_STARTD,'DD/MM/YYYY HH24:MI:SS')
     and transaction_type = 'MR'
 )
 , mv_users_data as (
-select /*+ FULL(mp) */
+select 
     decode(mw.user_type,'OPERATOR', mw.user_type, nvl(mp.user_type, u.user_type)) user_type
     , nvl2(mp.user_id, mp.msisdn, nvl2(u.user_id, u.msisdn, mw.msisdn)) msisdn
     , nvl(mp.user_name, u.user_name) user_name
@@ -105,7 +105,7 @@ where mw.user_type = 'OPERATOR' or mp.user_id is not null or u.user_id is not nu
 /*list of actives users the last 91 Days before the start date */
 list_actives_91_Days AS(
 
-        SELECT /*+ FULL(ti) */ distinct ti.party_id, ti.ACCOUNT_ID msisdn
+        SELECT  distinct ti.party_id, ti.ACCOUNT_ID msisdn
     FROM MTX_TRANSACTION_ITEMS ti
         inner join SYS_SERVICE_TYPES s on s.service_type = ti.service_type AND s.IS_FINANCIAL = 'Y'
         inner join MTX_CATEGORIES c on c.CATEGORY_CODE = ti.CATEGORY_CODE and c.CATEGORY_TYPE in ( 'CHUSER', 'SUBS')
@@ -121,7 +121,7 @@ list_actives_91_Days AS(
 /*list of actives users on the day before extraction */
 
 list_actives_Of_Day AS (
-        SELECT /*+ FULL(ti) */ distinct ti.PARTY_ID, ti.ACCOUNT_ID msisdn
+        SELECT  distinct ti.PARTY_ID, ti.ACCOUNT_ID msisdn
     FROM MTX_TRANSACTION_ITEMS ti
         inner join SYS_SERVICE_TYPES s on s.service_type = ti.service_type AND s.IS_FINANCIAL = 'Y'
         inner join MTX_CATEGORIES c on c.CATEGORY_CODE = ti.CATEGORY_CODE and c.CATEGORY_TYPE in ( 'CHUSER', 'SUBS')
@@ -137,7 +137,7 @@ list_actives_Of_Day AS (
 /* list of actives users on the last 90 days before extraction*/
 
 list_actives_last_90_days AS (
-        SELECT /*+ FULL(ti) */ distinct ti.PARTY_ID, ti.ACCOUNT_ID msisdn
+        SELECT  distinct ti.PARTY_ID, ti.ACCOUNT_ID msisdn
     FROM MTX_TRANSACTION_ITEMS ti
         inner join SYS_SERVICE_TYPES s on s.service_type = ti.service_type AND s.IS_FINANCIAL = 'Y'
         inner join MTX_CATEGORIES c on c.CATEGORY_CODE = ti.CATEGORY_CODE and c.CATEGORY_TYPE in ( 'CHUSER', 'SUBS')
@@ -422,7 +422,7 @@ SELECT Distinct
                 to_number(null)                                         cust_nph_09,
                 to_number(null)                                         cust_nph_10
 FROM   (
-                        SELECT /*+ FULL(u) */
+                        SELECT 
                                 u.*
                                 FROM mv_users_data u
                                         inner join list_actives_last_90_days on list_actives_last_90_days.PARTY_ID = u.user_id and list_actives_last_90_days.msisdn = u.msisdn
@@ -435,7 +435,7 @@ FROM   (
                                         AND u.status <> 'N'
                         UNION
 
-                                SELECT /*+ FULL(u) */
+                                SELECT
                                 u.*
                                 FROM mv_users_data u
                                         inner join (SELECT L2.PARTY_ID , L2.msisdn
@@ -453,7 +453,7 @@ FROM   (
 
                         UNION
 
-                Select /*+ FULL(u) */
+                Select 
                         u.*
                         FROM    mv_users_data u
                         WHERE   u.status <> 'N'
