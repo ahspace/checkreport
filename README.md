@@ -4,15 +4,17 @@
 
 Improvements in the cloud package:
 
--> Instead of one, 2 dbs connection established(omreporting, Tango) for In_Account, In_Account_ext.
+1. Instead of one, 2 dbs connection established(omreporting, Tango) for In_Account, In_Account_ext.
 
--> Files effected:
+2. Files effected:
 
 Compliance.py
 config.json
 Oracle.py
 
--> Removal of hints(FULL) as it degrading the performance on cloud.
+3. Removal of hints(FULL) as it degrading the performance on cloud.
+
+4. Adaptation of local timezone.
 
 ## VERSION 2.3.3
 
