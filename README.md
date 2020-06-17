@@ -8,9 +8,11 @@ Improvements in the cloud package:
 
 2. Files effected:
 
-Compliance.py
-config.json
-Oracle.py
+    Compliance.py
+    
+    config.json
+    
+    Oracle.py
 
 3. Removal of hints(FULL) as it degrading the performance on cloud.
 
