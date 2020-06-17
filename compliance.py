@@ -387,7 +387,7 @@ def runkpi(data, sep, dot_time, exttime):
             for record in data['sqlparams']:
                 kpi_file.write(record['outputfile'] + sep )
                 kpi_file.write(str(datetime.timedelta(seconds=exttime[val])) + sep)
-                kpi_file.write(time.strftime('%d/%m/%Y %H:%M:%S', time.gmtime(os.path.getmtime(EME_DIR +'/'+ record['outputfile']))) + sep)
+                kpi_file.write(time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(os.path.getmtime(EME_DIR +'/'+ record['outputfile']))) + sep)
                 kpi_file.write(str(os.path.getsize(EME_DIR +'/'+ record['outputfile'])) + sep )
                 fileallcount = countall(EME_DIR, record['outputfile'])
                 filetransactionsum = 0
